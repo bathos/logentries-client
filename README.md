@@ -7,6 +7,9 @@ For use with Node.js and io.js.
 It might work with Browserify, too, but you would need to use a shims for net
 or, if using `secure: true`, tls (both of which exist).
 
+Tested in v0.10 +. Probably works in 0.8 but one of the test libraries (mitm)
+doesn’t, so it remains unconfirmed.
+
 ## Start
 
 ```javascript

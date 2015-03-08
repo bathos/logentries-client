@@ -28,8 +28,8 @@ token, but you can configure its behavior further.
  - **secure:** If truthy, uses a tls connection. Default: `false`.
  - **console:** If truthy, log events also get sent to `console.log`,
    `console.warn` and `console.error` as appropriate. Default: `false`.
- - **timestamp**: Automatically prefix entries with an ISO timestamp (strings)
-   or add the same as a property (objects). Default: `true`.
+ - **timestamp**: If truthy, prefix entries with an ISO timestamp (if strings)
+   or add the same as a property (if objects). Default: `false`.
  - **levels**: Custom names for the 7 log levels and their corresponding
    methods. More details on this below.
  - **minLevel**: The minimum level to actually record logs at. String or

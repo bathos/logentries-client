@@ -51,13 +51,13 @@
 	},
 
 	"dependencies": {
-		"lodash": "^3.3.1"
+		"lodash": ">= 3.3.1 < 4"
 	},
 
 	"devDependencies": {
-		"mitm": "^1.0.3",
-		"tape": "^3.5.0",
-		"tap-spec": "^2.2.2"
+		"mitm": ">= 1.0.3 < 2",
+		"tape": ">= 3.5.0 < 4",
+		"tap-spec": ">= 2.2.2 < 3"
 	}
 
 }

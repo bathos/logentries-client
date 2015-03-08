@@ -1,0 +1,57 @@
+{
+	"name": "logentries-client",
+
+	"version": "0.0.1",
+
+	"description":
+		"Logentries client for node; use with or without Winston or Bunyan.",
+
+	"keywords": [
+		"logentries",
+		"logentries.com",
+		"logs",
+		"logging",
+		"winston",
+		"bunyan"
+	],
+
+	"contributors": [
+		{
+			"name": "Darien Maillet Valentine",
+			"email": "darien.valentine@logentries.com"
+		}
+	],
+
+	"license": "proprietary",
+
+	"homepage": "https://github.com/logentries/le_node",
+
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/logentries/le_node.git"
+	},
+
+	"main": "lib/logger.js",
+
+	"scripts": {
+		"test": "NODE_PATH=./lib/ node test/test.js | tap-spec"
+	},
+
+	"private": true,
+
+	"engines": {
+		"node": "^0.12.0",
+		"npm": "^2.7.0"
+	},
+
+	"dependencies": {
+		"lodash": "^3.3.1"
+	},
+
+	"devDependencies": {
+		"mitm": "^1.0.3",
+		"tape": "^3.5.0",
+		"tap-spec": "^2.2.2"
+	}
+
+}

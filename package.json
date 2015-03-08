@@ -15,21 +15,23 @@
 		"bunyan"
 	],
 
+	"author": {
+		"name": "Darien Maillet Valentine",
+		"email": "darien.valentine@logentries.com"
+	},
+
 	"contributors": [
 		{
 			"name": "Darien Maillet Valentine",
 			"email": "darien.valentine@logentries.com"
+		},
+		{
+			"name": "Paul Dixon",
+			"email": "paul.dixon@logentries.com"
 		}
 	],
 
-	"license": "proprietary",
-
-	"homepage": "https://github.com/logentries/le_node",
-
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/logentries/le_node.git"
-	},
+	"license": "BSD",
 
 	"main": "lib/logger.js",
 
@@ -37,11 +39,9 @@
 		"test": "NODE_PATH=./lib/ node test/test.js | tap-spec"
 	},
 
-	"private": true,
-
 	"engines": {
-		"node": "^0.12.0",
-		"npm": "^2.7.0"
+		"node": "^0.4.0",
+		"npm": "^2.0.0"
 	},
 
 	"dependencies": {

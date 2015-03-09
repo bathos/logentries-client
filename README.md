@@ -106,7 +106,9 @@ can be changed at any time.
 
 ## Using as a Winston ‘Transport’
 
-Yup!
+If Winston is included in your package.json dependencies, simply requiring the
+Logentries client will place the transport constructor at `winston.transports`,
+even if Winston itself hasn’t yet been required.
 
 ```javascript
 var winston = require('winston');
@@ -115,15 +117,45 @@ var LogentriesClient = require('logentries-client');
 winston.add(winston.transports.Logentries, opts);
 ```
 
-If Winston appears as a required library in your package.json, simply requiring
-the Logentries client will provision a transport constructor at `winston.transports`.
-
-The usual options are supported. If levels are not provided, Winston’s defaults
-will be used.
+The usual options are supported. If custom levels are not provided, Winston’s
+defaults will be used.
 
 In the hard-to-imagine case where you’re using Winston without including it in
 package.json, you can explicitly provision the transport by first requiring
 Winston and then calling `LogentriesClient.provisionWinston()`.
 
-
 ## Using with Bunyan
+
+For Bunyan it’s like so:
+
+```javascript
+var bunyan = require('bunyan');
+
+var LogentriesClient = require('logentries-client');
+
+var leBunyan = LogentriesClient.bunyanStream(opts);
+
+// One stream
+var logger = bunyan.createLogger(leBunyan);
+
+// Multiple streams
+var logger = bunyan.createLogger({
+	name: 'whatevs',
+	streams: [ leBunyan, otherStream ]
+});
+```
+
+Note that with Bunyan, only the first six log levels will be used, and
+timestamps are provided by Bunyan already. Other options are the same. If after
+creation you wish to change the minimum log level, use Bunyan’s methods. The
+stream will be named ‘logentries,’ though you can change it on the object
+returned by `bunyanStream()`.
+
+## Setting Up With Logentries Itself
+
+When you create an account at Logentries (just a standard signup form; there’s a
+free tier), you can find the token you need. It’s shown during the initial walk-
+through but you can find it later under Logs/Hosts/{ the name of your host } --
+on the far right, a gray TOKEN button that you can click to reveal the string.
+
+That’s it -- once you have the token you’re set.

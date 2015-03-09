@@ -6,10 +6,11 @@
 console.log(process.env.NODE_PATH);
 
 var _ = require('lodash');
-var tape = require('tape');
+var bunyan = require('bunyan');
 var defaults = require('defaults');
 var lu = require('logger-util');
 var mitm = require('mitm');
+var tape = require('tape');
 var winston = require('winston');
 
 var Logger = require('logger');
@@ -377,4 +378,43 @@ tape('Winston integration is provided.', function(t) {
 	});
 
 	winston.warn('mysterious radiation');
+});
+
+// BUNYAN STREAM ///////////////////////////////////////////////////////////////
+
+tape('Bunyan integration is provided.', function(t) {
+	t.plan(9);
+
+	var streamDef = Logger.bunyanStream({ token: 'x', minLevel: 3 });
+
+	t.true(streamDef, 'bunyan stream definition created');
+
+	t.equal(streamDef.level, defaults.bunyanLevels[3],
+		'minLevel translated correctly');
+
+	t.equal(streamDef.stream._logger.minLevel, defaults.bunyanLevels[0],
+		'minLevel ignored at logger-level');
+
+	var logger = bunyan.createLogger({
+		name: 'whatevs',
+		streams: [ streamDef ]
+	});
+
+	t.true(logger, 'bunyan logger created');
+
+	mockTest(function(data) {
+		t.pass('bunyan stream transmits');
+
+		var log = JSON.parse(data.substr(2));
+
+		t.pass('valid json');
+
+		t.equal(log.yes, 'okay', 'data as expected');
+
+		t.equal(log.level, 40, 'bunyan level number as expected');
+
+		t.equal(log._level, defaults.bunyanLevels[3], 'level name as expected');
+	});
+
+	logger[defaults.bunyanLevels[3]]({ yes: 'okay' });
 });

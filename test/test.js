@@ -10,6 +10,7 @@ var tape = require('tape');
 var defaults = require('defaults');
 var lu = require('logger-util');
 var mitm = require('mitm');
+var winston = require('winston');
 
 var Logger = require('logger');
 
@@ -353,4 +354,27 @@ tape('Socket gets re-opened as needed.', function(t) {
 		}, 500);
 	}, 500);
 
+});
+
+// WINSTON TRANSPORT ///////////////////////////////////////////////////////////
+
+tape('Winston integration is provided.', function(t) {
+	t.plan(4);
+	t.timeoutAfter(2000);
+
+	t.true(winston.transports.Logentries,
+		'provisioned constructor automatically');
+
+	t.doesNotThrow(function() {
+		winston.add(winston.transports.Logentries, { token: 'x' });
+	}, 'transport can be added');
+
+	winston.remove(winston.transports.Console);
+
+	mockTest(function(data) {
+		t.pass('winston log transmits');
+		t.equal(data, 'x warn mysterious radiation\n', 'msg as expected');
+	});
+
+	winston.warn('mysterious radiation');
 });

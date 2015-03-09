@@ -7,15 +7,15 @@ For use with Node.js and io.js.
 It might work with Browserify, too, but you would need to use a shims for net
 or, if using `secure: true`, tls (both of which exist).
 
-Tested in v0.10 +. Probably works in 0.8 but one of the test libraries (mitm)
-doesn’t, so it remains unconfirmed.
+Tested in Node v0.10 + and io.js. Probably works in Node 0.8, but one of the
+test libraries (mitm) doesn’t, so it remains unconfirmed.
 
 ## Start
 
 ```javascript
-var Logger = require('logentries-client');
+var LogentriesClient = require('logentries-client');
 
-var logger = new Logger({
+var logger = new LogentriesClient({
 	token: 'myAccessToken'
 });
 
@@ -58,7 +58,6 @@ either an array or an object hash:
 [ 'boring', 'yawn', 'eh', 'hey' ]
 
 { boring: 0, yawn: 1, eh: 2, hey: 3 }
-
 ```
 
 If a name is omitted, the default will be used in its place. If you set a
@@ -72,11 +71,10 @@ Not that you’d be likely to name a log level ‘hasOwnProperty,’ but just sa
 All of these methods are really sugar for the core method `log`, which you can
 also use directly if you prefer. The following three are equivalent:
 
- ```javascript
+```javascript
 logger.notice('my msg');
 logger.log('notice', 'my msg');
 logger.log(2, 'my msg');
-
 ```
 
 ## Events
@@ -105,3 +103,27 @@ part of a graceful exit.
 
 The options `console`, `timestamp` and `minLevel` are exposed as properties that
 can be changed at any time.
+
+## Using as a Winston ‘Transport’
+
+Yup!
+
+```javascript
+var winston = require('winston');
+var LogentriesClient = require('logentries-client');
+
+winston.add(winston.transports.Logentries, opts);
+```
+
+If Winston appears as a required library in your package.json, simply requiring
+the Logentries client will provision a transport constructor at `winston.transports`.
+
+The usual options are supported. If levels are not provided, Winston’s defaults
+will be used.
+
+In the hard-to-imagine case where you’re using Winston without including it in
+package.json, you can explicitly provision the transport by first requiring
+Winston and then calling `LogentriesClient.provisionWinston()`.
+
+
+## Using with Bunyan

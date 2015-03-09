@@ -3,8 +3,6 @@
 
 // REQUIRES ////////////////////////////////////////////////////////////////////
 
-console.log(process.env.NODE_PATH);
-
 var _ = require('lodash');
 var bunyan = require('bunyan');
 var defaults = require('defaults');
@@ -418,3 +416,4 @@ tape('Bunyan integration is provided.', function(t) {
 
 	logger[defaults.bunyanLevels[3]]({ yes: 'okay' });
 });
+

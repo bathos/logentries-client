@@ -2,13 +2,15 @@
 
 # Logentries Client (JS)
 
-For use with Node.js and io.js.
+Allows you to send logs to your [logentries](https://www.logentries.com) account from Node or io.js.
 
-It might work with Browserify, too, but you would need to use a shims for net
-or, if using `secure: true`, tls (both of which exist).
+> It might work with Browserify, too, but you would need to use shims for net
+> or tls (depending on whether you set `secure` to `true`). Such shims do exist,
+> but I haven’t tested it.
 
-Tested in Node v0.10 + and io.js. Probably works in Node 0.8, but one of the
-test libraries (mitm) doesn’t, so it remains unconfirmed.
+Tested in Node v0.10 + and io.js. It probably works in Node 0.8 too, but one of
+the test libraries ([mitm](https://www.npmjs.com/package/mitm)) doesn’t, so it
+remains unconfirmed.
 
 ## Start
 

@@ -39,6 +39,10 @@ token, but you can configure its behavior further.
    methods. More details on this below.
  - **minLevel**: The minimum level to actually record logs at. String or
    Number. Defaults to 1.
+ - **replacer**: A custom value-transform function to be used during JSON
+   serialization. Applied before error transformation.
+ - **withStack**: If an object is or contains an `Error` object, setting this to
+   `true` will cause the stack trace to be included. Default: `false.`
 
 ### Log Levels
 
@@ -94,6 +98,12 @@ one, `_time`, etc). Likewise JSON logs will get the `level` property.
 
 If the value is an array, it will be interepreted as multiple log entries;
 likewise if a log method is called with extra arguments.
+
+Native JSON.stringify serialization is augmented to allow for circular
+references and including the name, message and (optionally) stack trace of Error
+objects. In addition you can provide a custom value transformation function to
+be used. See [MDN: JSON > Stringify > The Replacer Parameter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#The_replacer_parameter)
+for details.
 
 ## Methods
 

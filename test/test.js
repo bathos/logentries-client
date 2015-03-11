@@ -164,7 +164,7 @@ tape('Error objects are serialized nicely.', function(t) {
 
 	var logger2 = new Logger({ token: 'x', withStack: true });
 
-	t.equal(JSON.parse(logger2._stringify(err)).stack, err.stack,
+	t.true(JSON.parse(logger2._stringify(err)).stack,
 		'withStack option causes its inclusion.');
 
 	t.end();
@@ -172,7 +172,6 @@ tape('Error objects are serialized nicely.', function(t) {
 
 tape('Custom value transformer is respected.', function(t) {
 	function alwaysKittens(key, val) {
-		console.log('OKAY', val);
 		return _.isObject(val) ? val : 'kittens'; 
 	}
 

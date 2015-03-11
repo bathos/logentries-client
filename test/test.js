@@ -144,6 +144,74 @@ tape('Logger allows specification of minLevel at construction', function(t) {
 
 });
 
+// CUSTOM JSON SERIALIZATION ///////////////////////////////////////////////////
+
+tape('Error objects are serialized nicely.', function(t) {
+	var msg = 'no kittens found';
+	var err = new Error(msg);
+	var log = { errs: [ err ] };
+
+	var logger1 = new Logger({ token: 'x' });
+
+	t.equal(JSON.parse(logger1._stringify(err)).message, msg,
+		'error object is serialized.');
+
+	t.equal(JSON.parse(logger1._stringify(log)).errs[0].message, msg,
+		'including when nested.');
+
+	t.equal(JSON.parse(logger1._stringify(err)).stack, undefined,
+		'by default, stack is not included.');
+
+	var logger2 = new Logger({ token: 'x', withStack: true });
+
+	t.equal(JSON.parse(logger2._stringify(err)).stack, err.stack,
+		'withStack option causes its inclusion.');
+
+	t.end();
+});
+
+tape('Custom value transformer is respected.', function(t) {
+	function alwaysKittens(key, val) {
+		console.log('OKAY', val);
+		return _.isObject(val) ? val : 'kittens'; 
+	}
+
+	var log = {
+		status: 'green',
+		friends: [ 'dogs', 'gerbils', 'horses' ],
+		err: new Error('not kittens :(')
+	};
+
+	var logger = new Logger({ token: 'x', replacer: alwaysKittens });
+
+	var res = JSON.parse(logger._stringify(log));
+
+	t.equal(res.status, 'kittens', 'single property.');
+
+	t.true(res.friends.every(function(v) { return v == 'kittens'; }),
+		'array elements');
+
+	t.equal(res.err.message, 'kittens',
+		'custom replacer cooperates with automatic error transormation');
+
+	t.end();
+});
+
+tape('Circular references don’t make the sad times.', function(t) {
+	var consciousness = { };
+	consciousness.iAm = consciousness;
+
+	var logger = new Logger({ token: 'x' });
+
+	var res = JSON.parse(logger._stringify(consciousness));
+
+	t.true(res, 'circular reference allowed');
+
+	t.equal(res.iAm, '[Circular ~]', 'circular reference indicated');
+
+	t.end();
+});
+
 // SENDING DATA ////////////////////////////////////////////////////////////////
 
 function mockTest(cb) {

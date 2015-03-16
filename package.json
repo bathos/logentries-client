@@ -1,6 +1,6 @@
 {
   "name": "logentries-client",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Logentries client for node; use with or without Winston or Bunyan.",
   "keywords": [
     "logentries",

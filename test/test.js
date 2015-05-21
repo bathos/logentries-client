@@ -170,6 +170,19 @@ tape('Error objects are serialized nicely.', function(t) {
 	t.end();
 });
 
+tape('Arguments and regex patterns are serialized.', function(t) {
+	var argObj = (function() { return arguments; })(1, 2, 3);
+	var regObj = /abc/;
+
+	var logger = new Logger({ token: 'x' });
+
+	t.true(logger._stringify(argObj) === '[1,2,3]', 'arguments become arrays.')
+
+	t.true(logger._stringify(regObj) === '"/abc/"', 'patterns become strings');
+
+	t.end();
+});
+
 tape('Custom value transformer is respected.', function(t) {
 	function alwaysKittens(key, val) {
 		return _.isObject(val) ? val : 'kittens'; 
@@ -207,6 +220,68 @@ tape('Circular references don’t make the sad times.', function(t) {
 	t.true(res, 'circular reference allowed');
 
 	t.equal(res.iAm, '[Circular ~]', 'circular reference indicated');
+
+	t.end();
+});
+
+// FLATTENED DATA //////////////////////////////////////////////////////////////
+
+tape('Flattening options work.', function(t) {
+	var log = {
+		lilBub: {
+			occupation: 'prophet',
+			paws: [
+				{ excellence: { value: 10, max: 5 } },
+				{ excellence: { value: 10, max: 5 } },
+				{ excellence: { value: 10, max: 5 } },
+				{ excellence: { value: 10, max: 5 } }
+			]
+		}
+	};
+
+	function replacer(key, val) {
+		return key == 'value' ? val * 2 : val;
+	}
+
+	var logger1 = new Logger({
+		token: 'x',
+		flatten: true,
+		flattenArrays: false
+	});
+
+	var logger2 = new Logger({
+		token: 'x',
+		flatten: true,
+		replacer: replacer
+	});
+
+	var res = JSON.parse(logger1._stringify(log));
+
+	t.true('lilBub.occupation' in res, 'keys use dot notation');
+
+	t.equal(res['lilBub.occupation'], 'prophet', 'non-objects are values');
+
+	t.true(
+		'lilBub.paws' in res,
+		'- flattenArrays treats arrays as non-objects'
+	);
+
+	t.true(
+		'excellence.value' in res['lilBub.paws'][0],
+		'- flattenArrays still lets object members transform'
+	);
+
+	var res2 = JSON.parse(logger2._stringify(log));
+
+	t.true(
+		'lilBub.paws.0.excellence.max' in res2,
+		'+ flattenArrays treats arrays as objects'
+	);
+
+	t.equals(
+		res2['lilBub.paws.0.excellence.value'], 20,
+		'custom replacers are still respected and applied first'
+	);
 
 	t.end();
 });

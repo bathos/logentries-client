@@ -43,6 +43,11 @@ token, but you can configure its behavior further.
    serialization. Applied before error transformation.
  - **withStack**: If an object is or contains an `Error` object, setting this to
    `true` will cause the stack trace to be included. Default: `false.`
+ - **flatten**: Convert objects into a single-level object where the values of
+   interior objects become dot-notation properties of the root object. Defaults
+   to false. More details on this below.
+ - **flattenArrays**: If `flatten` is true, you can also indicate whether arrays
+   should be subject to the same process. Defaults to true if `flatten` is true.
 
 ### Log Levels
 
@@ -108,6 +113,18 @@ for details.
 If you choose to set `withStack` to true, the stack will be included as an array (so that it is not painful to look at). Be sure to turn on "expand JSON" (meaning pretty print) in the options on logentries:
 
 ![stack trace as seen in logentries app][screen1]
+
+### Flattened Log Objects
+
+In some cases it will end up being easier to query your data if objects aren’t
+deeply nested. With the `flatten` and `flattenArrays` options, you can tell the
+client to transform an object like this:
+
+  * `{ "a": 1, "b": { "c": 2 } }` => `{ "a": 1, "b.c": 2 }`
+
+If `flattenArrays` has not been set to false, this will apply to arrays as well:
+
+  * `{ "a": [ "b", { "c": 3 } ] }` => `{ "a.0": "b", "a.1.c": 3 }`
 
 ## Methods
 

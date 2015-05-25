@@ -3,84 +3,93 @@
 
 // REQUIRES ////////////////////////////////////////////////////////////////////
 
-var _ = require('lodash');
-var bunyan = require('bunyan');
-var defaults = require('defaults');
-var lu = require('logger-util');
-var mitm = require('mitm');
-var tape = require('tape');
-var winston = require('winston');
+var _        = require('lodash');
+var bunyan   = require('bunyan');
+var defaults = require('../lib/node_modules/defaults.js');
+var levels   = require('../lib/node_modules/levels.js');
+var Logger   = require('../lib/node_modules/logger.js');
+var mitm     = require('mitm');
+var tape     = require('tape');
+var winston  = require('winston');
 
-var Logger = require('logger');
+// FAKE TOKEN //////////////////////////////////////////////////////////////////
+
+var x = '00000000-0000-0000-0000-000000000000';
 
 // CUSTOM LEVEL NAMES //////////////////////////////////////////////////////////
 
 tape('Levels are default if custom levels are not supplied.', function(t) {
-	t.deepEqual(lu.normalizeCustomLevels(), defaults.levels, 'undefined');
-	t.deepEqual(lu.normalizeCustomLevels(null), defaults.levels, 'null');
-	t.deepEqual(lu.normalizeCustomLevels({}), defaults.levels, 'empty obj');
-	t.deepEqual(lu.normalizeCustomLevels([]), defaults.levels, 'empty arr');
-	t.deepEqual(lu.normalizeCustomLevels(_.noop), defaults.levels, 'function');
+	t.deepEqual(levels.normalize({}), defaults.levels, 'undefined');
+	t.deepEqual(levels.normalize({ levels: null }), defaults.levels, 'null');
+	t.deepEqual(levels.normalize({ levels: {} }), defaults.levels, 'empty obj');
+	t.deepEqual(levels.normalize({ levels: [] }), defaults.levels, 'empty arr');
+	t.deepEqual(
+		levels.normalize({ levels: _.noop }),
+		defaults.levels,
+		'function'
+	);
 
 	t.end();
 });
 
 tape('Weird value for custom levels object throws.', function(t) {
-	t.throws(lu.normalizeCustomLevels.bind(null, 4), 'number');
-	t.throws(lu.normalizeCustomLevels.bind(null, 'cheese'), 'string');
-	t.throws(lu.normalizeCustomLevels.bind(null, NaN), 'number (NaN)');
-	t.throws(lu.normalizeCustomLevels.bind(null, true), 'boolean');
+	t.throws(levels.normalize.bind(null, { levels: 4 }), 'number');
+	t.throws(levels.normalize.bind(null, { levels: 'cheese' }), 'string');
+	t.throws(levels.normalize.bind(null, { levels: NaN }), 'number (NaN)');
+	t.throws(levels.normalize.bind(null, { levels: true }), 'boolean');
 	
 	t.end();
 });
 
-tape('Custom levels without valid indices are ignored.', function(t) {
-	var levels = lu.normalizeCustomLevels({ a: 1, b: 3.14, c: '$$$', d: null });
-
-	t.equal(levels[0], defaults.levels[0], 'defaults come through as needed');
-	t.equal(levels[1], 'a', 'valid keys still comes through.');
-	t.notEqual(levels[3], 'b', 'other keys are ignored');
+tape('Custom levels without valid indices throw.', function(t) {
+	t.throws(levels.normalize.bind(
+		null, { levels: { a: -1 } }), 'negative index');
+	t.throws(levels.normalize.bind(
+		null, { levels: { a: 3.14 } }), 'decimals');
+	t.throws(levels.normalize.bind(
+		null, { levels: { a: '$$$' } }), 'non-numeric');
+	t.throws(levels.normalize.bind(
+		null, { levels: { a: null } }), 'null');
+	t.doesNotThrow(
+		levels.normalize.bind(null, { levels: { a: 1 } }),
+		'valid index does not throw'
+	);
 
 	t.end();
 });
 
 tape('Custom levels with invalid names throw.', function(t) {
-	t.throws(lu.normalizeCustomLevels.bind(null, [ [] ]), 'object');
-	t.throws(lu.normalizeCustomLevels.bind(null, [ true ]), 'boolean');
-	t.throws(lu.normalizeCustomLevels.bind(null, [ NaN ]), 'NaN');
+	t.throws(levels.normalize.bind(null, { levels: [ [] ] }), 'object');
+	t.throws(levels.normalize.bind(null, { levels: [ true ] }), 'boolean');
+	t.throws(levels.normalize.bind(null, { levels: [ NaN ] }), 'NaN');
 	
 	t.end();
-
 });
 
 tape('Custom levels with duplicate names throw.', function(t) {
-	t.throws(lu.normalizeCustomLevels.bind(null, [ 'a', 'b', 'a' ]),
+	t.throws(levels.normalize.bind(null, { levels: [ 'a', 'b', 'a' ] }),
 		'duplicate strings');
 
-	t.throws(lu.normalizeCustomLevels.bind(null, [ '230', 230 ]),
+	t.throws(levels.normalize.bind(null, { levels: [ '230', 230 ] }),
 		'coercively duplicative strings');
 
-	t.doesNotThrow(lu.normalizeCustomLevels.bind(null, [ 'A', 'a' ]),
+	t.doesNotThrow(levels.normalize.bind(null, { levels: [ 'A', 'a' ] }),
 		'case sensitive');
 	
 	t.end();
 });
 
 tape('Custom levels with conflicting names throw.', function(t) {
-	function Dummy() { this.propN = true; }
+
+	function makeLogger(levels) {
+		new Logger({ token: x, levels: levels });
+	}
+
+	t.throws(makeLogger.bind(null, [ 'log' ]), 'own property');
 	
-	Dummy.prototype = { propQ: true };
+	t.throws(makeLogger.bind(null, [ 'write' ]), 'inherited property');
 
-	var dummy = new Dummy();
-
-	t.throws(lu.validateCustomLevels.bind(null, [ 'propN' ], dummy),
-		'own property');
-	
-	t.throws(lu.validateCustomLevels.bind(null, [ 'propQ' ], dummy),
-		'inherited property');
-
-	t.doesNotThrow(lu.validateCustomLevels.bind(null, [ 'propX' ], dummy),
-		'valid property');
+	t.doesNotThrow(makeLogger.bind(null, [ 'propX' ]), 'valid property');
 	
 	t.end();
 });
@@ -94,23 +103,23 @@ tape('Logger throws with bad options.', function(t) {
 	t.throws(withOpts(), 'missing options');
 	t.throws(withOpts('cats'), 'primitive');
 	t.throws(withOpts({}), 'missing token');
-	t.throws(withOpts({ token: [] }), 'nonsense token');
+	t.throws(withOpts({ token: [] }), 'nonsense token type');
+	t.throws(withOpts({ token: 'abcdef' }), 'nonsense token string');
 
 	t.end();
 });
 
-tape('Logger shelters the inept from their own mistakes.', function(t) {
+tape('Logger does not forgive or forget.', function(t) {
 	/* jshint newcap: false */
 
-	t.equal(Logger({ token: 'x' }) instanceof Logger, true,
-		'missing new operator');
+	t.throws(function() { Logger({ token: x }); }, 'missing new throws');
 
 	t.end();
 });
 
 tape('Logger allows custom log level methods at construction.', function(t) {
 	var logger = new Logger({
-		token: 'x',
+		token: x,
 		levels: [ 'tiny', 'small' ]
 	});
 
@@ -128,17 +137,19 @@ tape('Logger allows custom log level methods at construction.', function(t) {
 
 tape('Logger allows specification of minLevel at construction', function(t) {
 
-	var logger1 = new Logger({ token: 'x', minLevel: defaults.levels[3] });
+	var name = defaults.levels[3];
 
-	t.equal(logger1.minLevel, defaults.levels[3], 'Specified by name.');
+	var logger1 = new Logger({ token: x, minLevel: name });
 
-	var logger2 = new Logger({ token: 'x', minLevel: 3 });
+	t.equal(logger1.minLevel, 3, 'by name.');
 
-	t.equal(logger2.minLevel, defaults.levels[3], 'Specified by index (num)');
+	var logger2 = new Logger({ token: x, minLevel: 3 });
 
-	var logger3 = new Logger({ token: 'x', minLevel: '3' });
+	t.equal(logger2.minLevel, 3, 'by index (num)');
 
-	t.equal(logger3.minLevel, defaults.levels[3], 'Specified by index (str)');
+	var logger3 = new Logger({ token: x, minLevel: '3' });
+
+	t.equal(logger3.minLevel, 3, 'by index (str)');
 
 	t.end();
 
@@ -151,20 +162,20 @@ tape('Error objects are serialized nicely.', function(t) {
 	var err = new Error(msg);
 	var log = { errs: [ err ] };
 
-	var logger1 = new Logger({ token: 'x' });
+	var logger1 = new Logger({ token: x });
 
-	t.equal(JSON.parse(logger1._stringify(err)).message, msg,
+	t.equal(JSON.parse(logger1.serialize(err)).message, msg,
 		'error object is serialized.');
 
-	t.equal(JSON.parse(logger1._stringify(log)).errs[0].message, msg,
+	t.equal(JSON.parse(logger1.serialize(log)).errs[0].message, msg,
 		'including when nested.');
 
-	t.equal(JSON.parse(logger1._stringify(err)).stack, undefined,
+	t.equal(JSON.parse(logger1.serialize(err)).stack, undefined,
 		'by default, stack is not included.');
 
-	var logger2 = new Logger({ token: 'x', withStack: true });
+	var logger2 = new Logger({ token: x, withStack: true });
 
-	t.true(JSON.parse(logger2._stringify(err)).stack,
+	t.true(JSON.parse(logger2.serialize(err)).stack,
 		'withStack option causes its inclusion.');
 
 	t.end();
@@ -174,11 +185,11 @@ tape('Arguments and regex patterns are serialized.', function(t) {
 	var argObj = (function() { return arguments; })(1, 2, 3);
 	var regObj = /abc/;
 
-	var logger = new Logger({ token: 'x' });
+	var logger = new Logger({ token: x });
 
-	t.true(logger._stringify(argObj) === '[1,2,3]', 'arguments become arrays.')
+	t.true(logger.serialize(argObj) === '[1,2,3]', 'arguments become arrays.')
 
-	t.true(logger._stringify(regObj) === '"/abc/"', 'patterns become strings');
+	t.true(logger.serialize(regObj) === '"/abc/"', 'patterns become strings');
 
 	t.end();
 });
@@ -194,9 +205,9 @@ tape('Custom value transformer is respected.', function(t) {
 		err: new Error('not kittens :(')
 	};
 
-	var logger = new Logger({ token: 'x', replacer: alwaysKittens });
+	var logger = new Logger({ token: x, replacer: alwaysKittens });
 
-	var res = JSON.parse(logger._stringify(log));
+	var res = JSON.parse(logger.serialize(log));
 
 	t.equal(res.status, 'kittens', 'single property.');
 
@@ -213,9 +224,9 @@ tape('Circular references don’t make the sad times.', function(t) {
 	var consciousness = { };
 	consciousness.iAm = consciousness;
 
-	var logger = new Logger({ token: 'x' });
+	var logger = new Logger({ token: x });
 
-	var res = JSON.parse(logger._stringify(consciousness));
+	var res = JSON.parse(logger.serialize(consciousness));
 
 	t.true(res, 'circular reference allowed');
 
@@ -244,18 +255,18 @@ tape('Flattening options work.', function(t) {
 	}
 
 	var logger1 = new Logger({
-		token: 'x',
+		token: x,
 		flatten: true,
 		flattenArrays: false
 	});
 
 	var logger2 = new Logger({
-		token: 'x',
+		token: x,
 		flatten: true,
 		replacer: replacer
 	});
 
-	var res = JSON.parse(logger1._stringify(log));
+	var res = JSON.parse(logger1.serialize(log));
 
 	t.true('lilBub.occupation' in res, 'keys use dot notation');
 
@@ -263,19 +274,19 @@ tape('Flattening options work.', function(t) {
 
 	t.true(
 		'lilBub.paws' in res,
-		'- flattenArrays treats arrays as non-objects'
+		'flattenArrays:false treats arrays as non-objects'
 	);
 
 	t.true(
 		'excellence.value' in res['lilBub.paws'][0],
-		'- flattenArrays still lets object members transform'
+		'flattenArrays:false still lets object members transform'
 	);
 
-	var res2 = JSON.parse(logger2._stringify(log));
+	var res2 = JSON.parse(logger2.serialize(log));
 
 	t.true(
 		'lilBub.paws.0.excellence.max' in res2,
-		'+ flattenArrays treats arrays as objects'
+		'flattenArrays:true treats arrays as objects'
 	);
 
 	t.equals(
@@ -305,7 +316,7 @@ tape('Data is sent over standard connection.', function(t) {
 
 	var lvl = defaults.levels[3];
 	var msg = 'test';
-	var tkn = 'x';
+	var tkn = x;
 
 	var mock = mitm();
 
@@ -336,7 +347,7 @@ tape('Data is sent over secure connection.', function(t) {
 
 	var lvl = defaults.levels[3];
 	var msg = 'test';
-	var tkn = 'x';
+	var tkn = x;
 
 	var mock = mitm();
 
@@ -355,43 +366,22 @@ tape('Data is sent over secure connection.', function(t) {
 });
 
 tape('Log methods can send multiple entries.', function(t) {
-	t.plan(4);
+	t.plan(2);
 	t.timeoutAfter(4000);
 
-	function test(type, act, cb) {
-		var count = 0;
-
-		mockTest(function(data) {
-			count++;
-
-			if (count == 2) {
-				t.pass(type);
-				t.equal(tkn + ' ' + lvl + ' test2\n', data, 'message matched');
-				if (cb) cb();
-			}
-		});
-
-		act();
-	}
-
 	var lvl = defaults.levels[3];
-	var tkn = 'x';
+	var tkn = x;
+	var logger = new Logger({ token: tkn });
+	var count = 0;
 
-	test('as extra args', function() {
-
-		var logger = new Logger({ token: tkn });
-
-		logger[lvl]('test1', 'test2');
-
-	}, function() {
-		test('as array', function() {
-
-			var logger = new Logger({ token: tkn });
-			
-			logger[lvl]([ 'test1', 'test2' ]);
-
-		});
+	mockTest(function(data) {
+		count++;
+		if (count == 1) return t.pass('as array');
+		t.equal(tkn + ' ' + lvl + ' test2\n', data, 'message matched');
 	});
+
+	logger[lvl]([ 'test1', 'test2' ]);
+
 });
 
 tape('Non-JSON logs may carry timestamp.', function(t) {
@@ -405,8 +395,11 @@ tape('Non-JSON logs may carry timestamp.', function(t) {
 	});
 
 	var lvl = defaults.levels[3];
-	var tkn = 'x';
-	var pattern = /^x \d{4}-\d\d-\d\dT\d\d:\d\d:\d\d.\d{3}Z \w+ test\n$/;
+	var tkn = x;
+	var pattern = new RegExp(
+		'^' + x +
+		' \\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d.\\d{3}Z \\w+ test\\n$'
+	);
 
 	var logger = new Logger({ token: tkn, timestamp: true });
 
@@ -419,7 +412,7 @@ tape('JSON logs match expected pattern.', function(t) {
 	mockTest(function(data) {
 		try {
 
-			var log = JSON.parse(data.substr(2));
+			var log = JSON.parse(data.substr(37));
 
 			t.pass('valid JSON');
 
@@ -442,7 +435,7 @@ tape('JSON logs match expected pattern.', function(t) {
 	});
 
 	var lvl = defaults.levels[3];
-	var tkn = 'x';
+	var tkn = x;
 	var timestampPattern = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d.\d{3}Z$/;
 
 	var logger = new Logger({ token: tkn, timestamp: true });
@@ -455,7 +448,7 @@ tape('Invalid calls to log methods emit error.', function(t) {
 	t.plan(2);
 	t.timeoutAfter(500);
 
-	var logger1 = new Logger({ token: 'x' });
+	var logger1 = new Logger({ token: x });
 
 	logger1.on('error', function() {
 		t.pass('no arguments');
@@ -463,7 +456,7 @@ tape('Invalid calls to log methods emit error.', function(t) {
 
 	logger1.log(3);
 
-	var logger2 = new Logger({ token: 'x' });
+	var logger2 = new Logger({ token: x });
 
 	logger2.on('error', function() {
 		t.pass('empty array');
@@ -476,7 +469,7 @@ tape('Socket gets re-opened as needed.', function(t) {
 	t.plan(1);
 	t.timeoutAfter(3000);
 
-	var logger = new Logger({ token: 'x' });
+	var logger = new Logger({ token: x });
 
 	mockTest(function(data) {
 
@@ -488,7 +481,7 @@ tape('Socket gets re-opened as needed.', function(t) {
 	logger.log(3, 'qwerty');
 
 	setTimeout(function() {
-		logger.end();
+		logger.closeConnection();
 
 		setTimeout(function() {
 			logger.log(3, 'qwerty');
@@ -507,14 +500,14 @@ tape('Winston integration is provided.', function(t) {
 		'provisioned constructor automatically');
 
 	t.doesNotThrow(function() {
-		winston.add(winston.transports.Logentries, { token: 'x' });
+		winston.add(winston.transports.Logentries, { token: x });
 	}, 'transport can be added');
 
 	winston.remove(winston.transports.Console);
 
 	mockTest(function(data) {
 		t.pass('winston log transmits');
-		t.equal(data, 'x warn mysterious radiation\n', 'msg as expected');
+		t.equal(data, x + ' warn mysterious radiation\n', 'msg as expected');
 	});
 
 	winston.warn('mysterious radiation');
@@ -523,17 +516,14 @@ tape('Winston integration is provided.', function(t) {
 // BUNYAN STREAM ///////////////////////////////////////////////////////////////
 
 tape('Bunyan integration is provided.', function(t) {
-	t.plan(9);
+	t.plan(8);
 
-	var streamDef = Logger.bunyanStream({ token: 'x', minLevel: 3 });
+	var streamDef = Logger.bunyanStream({ token: x, minLevel: 3 });
 
 	t.true(streamDef, 'bunyan stream definition created');
 
 	t.equal(streamDef.level, defaults.bunyanLevels[3],
 		'minLevel translated correctly');
-
-	t.equal(streamDef.stream._logger.minLevel, defaults.bunyanLevels[0],
-		'minLevel ignored at logger-level');
 
 	var logger = bunyan.createLogger({
 		name: 'whatevs',
@@ -545,7 +535,7 @@ tape('Bunyan integration is provided.', function(t) {
 	mockTest(function(data) {
 		t.pass('bunyan stream transmits');
 
-		var log = JSON.parse(data.substr(2));
+		var log = JSON.parse(data.substr(37));
 
 		t.pass('valid json');
 

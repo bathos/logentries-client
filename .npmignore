@@ -1,2 +1,7 @@
-*
-!/lib
+/.git
+/.gobble-build
+/docs
+/node_modules
+/src
+/test
+!/lib/node_modules

@@ -22,7 +22,7 @@ remains unconfirmed.
 - [Log Entries](#log-entries)
 - [Methods](#methods)
 - [Buffer & Connection Issues](#buffer--connection-issues)
-- [Using as a Winston ‘Transport’](#using-as-a-winston-‘transport’)
+- [Using as a Winston ‘Transport’](#using-as-a-winston-transport)
 - [Using with Bunyan](#using-with-bunyan)
 - [Setting Up With Logentries Itself](#setting-up-with-logentries-itself)
 - [Changelog](#changelog)

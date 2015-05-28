@@ -170,6 +170,7 @@ to be sure any pending logs have finished writing.
 
 ```javascript
 process.on('SIGINT', () => {
+   logger.notice({ type: 'server', event: 'shutdown' });
    logger.once('connection drain', () => process.exit());
 });
 ```

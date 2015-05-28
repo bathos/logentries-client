@@ -1,13 +1,15 @@
 [![Build Status](https://travis-ci.org/bathos/logentries-client.svg?branch=master)](https://travis-ci.org/bathos/logentries-client)
 
-# Logentries Client (JS)
+# le_node: Logentries Client
 
 Allows you to send logs to your [logentries](https://www.logentries.com) account
 from Node or io.js.
 
 > It might work with Browserify, too, but you would need to use shims for net
-> or tls (depending on whether you set `secure` to `true`). Such shims do exist,
-> but I haven’t tested it.
+> and tls. Such shims do exist, based on forge, but I haven’t tested it. There’s
+> a seperate client intended for use in the browser though, called
+> [le_js](https://www.npmjs.com/package/le_js), which uses http and is optimized
+> for browser-specific logging needs.
 
 Tested in Node v0.10 + and io.js. It probably works in Node 0.8 too, but one of
 the test libraries ([mitm](https://www.npmjs.com/package/mitm)) doesn’t, so it
@@ -25,10 +27,12 @@ remains unconfirmed.
 - [Using as a Winston ‘Transport’](#using-as-a-winston-‘transport’)
 - [Using with Bunyan](#using-with-bunyan)
 - [Setting Up With Logentries Itself](#setting-up-with-logentries-itself)
-- [Changelog](#changelog)
+- [2015-05-26: le_node & Logentries-Client](#2015-05-26-le_node--logentries-client)
+- [Changelog (Post-Merge)](#changelog-post-merge)
+- [Changelog (Old Logentries-Client)](#changelog-old-logentries-client)
+- [Changelog (Old le_node)](#changelog-old-le_node)
 
 <!-- /MarkdownTOC -->
-
 
 ## Start
 
@@ -178,7 +182,7 @@ a collision with an existing property, it will be prepended with an underscore.
 
 In some cases it will end up being easier to query your data if objects aren’t
 deeply nested. With the `flatten` and `flattenArrays` options, you can tell the
-client to transform an object like this:
+client to transform objects like so:
 
   * `{ "a": 1, "b": { "c": 2 } }` => `{ "a": 1, "b.c": 2 }`
 
@@ -276,9 +280,78 @@ That’s it -- once you have the token you’re set.
 
 [screen1]: docs/screen1.png
 
-## Changelog
+## 2015-05-26: le_node & Logentries-Client 
 
-### 1.0.0
+Previously, "le_node" and "logentries-client" were two different modules. The
+former has been replaced with the latter codebase, but the le_node name is the
+canonical repo (it’s referenced in many places). It’s still possible to get
+logentries-client under that name on NPM, but it’s just an alias for le_node
+now.
+
+For users of le_node from before this switch, there are some important
+differences to note before you upgrade.
+
+The new codebase follows the same essential pattern, and if all you did
+previously was instantiate the client and then call the logging methods, there
+should be no breaking changes.
+
+### Breaking Change: `client.end()`
+
+Unlike old le_node, the client is itself a writable stream (and therefore you
+can pipe to it, for example from stdout, though note that 1 write invocation =
+1 log entry). This also means that it has standard writable stream events and
+methods, including `.end()`. In the old le_node, `.end()` was a non-stream
+method that closed the underlying connection to the host.
+
+For the functionality previously provided by `.end()`, use `.closeConnection()`.
+
+### Deprecation: `client.level()` and `client.winston()`
+
+The old le_node had a method called `level()` for setting the minimum log level.
+This is now a property (not a method) called `minLevel`. It can be set to either
+the name of the level or its index. The `level()` method has been added to the
+new codebase to facilitate migration but will be removed at a later date.
+
+Simply requiring le_node now automatically provisions Winston, if present, with
+a Logentries transport constructor. You don’t have to do anything else. The
+`winston()` method has been added to the new codebase to facilitate migration
+but it’s a noop and will be removed at a later date.
+
+### Other Things For Migrants to Note
+
+The old documentation seemed to suggest that placing a listener on the client
+for error events was an optional thing. **This was always untrue. An unhandled
+error event from an EventEmitter is an unhandled error period.** If you do not
+place a listener for error events, your application will crash if the client
+emits an error!
+
+There are many new things you can now customize, and many outstanding bugs from
+the old le_node codebase never affected logentries-client -- circular refs are
+fine, `time` and `level` properties will never collide with existing props, and
+JSON serialization is much more robust and customizable. The connection is
+closed on extended inactivity and only reopened when needed; errors are handled
+correctly (no more try-catch around async ops -- ack!); there is built-in
+support for Bunyan, deep JSON objects won’t be arbitrarily cut at a certain
+depth, etc.
+
+You should assume that there may be other breaking changes which I am unaware
+of. When I wrote Logentries Client I hadn’t considered that it might replace
+le_node, so unfortunately interoperability was not on my mind. You’ll wish to
+test thoroughly before updating an existing codebase to use the new client.
+
+## Changelog (Post-Merge)
+
+### 1.0.2
+
+ - Logentries Client has become the new le_node. The original logentries-client
+   module is now an alias for le\_node, and le\_node is now what was previously
+   called logentries-client.
+ - Added `level()` and `winston()` methods with deprecation warnings so that
+   existing le_node applications do not throw TypeErrors.
+
+## Changelog (Old Logentries-Client)
+
+### 1.0.0 / 1.0.1
 
  - Major overhaul -- rewrote in ES6
  - Client is now a writable stream, compatible with stdout
@@ -336,4 +409,31 @@ That’s it -- once you have the token you’re set.
 
 ### 0.1.0
 
- - Initial release
+ - Initial commit
+
+## Changelog (Old le_node)
+
+(Pieced together to the best of my ability by reviewing commit history.)
+
+### 0.1.4
+
+ - Cleanup (rewrite?)
+ - Did not include several previously available options, including KVP mode
+
+### 0.1.3
+
+ - Switched from http to net module for non-ssl connection
+ - Added KVP-style flattening options & made it default
+ - Added more tests and options
+
+### 0.1.0
+
+ - Code cleanup and tests
+
+### 0.0.2
+
+ - Code cleanup and bug fixes
+
+### 0.0.1
+
+ - Initial commit

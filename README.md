@@ -143,10 +143,36 @@ argument and it will be interpretted as the log entry. When used this way, the
 
 ## Events
 
+### `'error'`
 The client is an EventEmitter, so you should (as always) make sure you have a
-listener on `'error'`. The only other event is `'log'` which fires when you’d
-expect. Error events can occur when there’s been a problem with the connection
-or if a method was called with invalid parameters.
+listener on `'error'`. Error events can occur when there’s been a problem with
+the connection or if a method was called with invalid parameters. Note that
+errors that occur during instantiation, as opposed to operation, will **throw**.
+
+### `'log'`
+Triggered when a log is about to be written to the underlying connection. The
+prepared log object or string is supplied as an argument.
+
+### `'connected'` and `'disconnected'`
+These indicate when a new connection to the host is established or has ended.
+Disconnection is normal if the connection is inactive for several minutes; it
+will be reopened when needed again.
+
+### `'drain'`, `'finish'`, `'pipe'`, and `'unpipe'`
+These are events inherited from `Writable`. Note that the drain event here is
+not the one you want to listen for if you’re interested in confirming that all
+pending data has **transmitted** -- for that, listen to `'connection drain'`.
+
+### `'connection drain'`
+This is the propagated drain event of the current underlying connection stream.
+This can be useful when it’s time for the application to terminate but you want
+to be sure any pending logs have finished writing.
+
+```javascript
+process.on('SIGINT', () => {
+   logger.once('connection drain', () => process.exit());
+});
+```
 
 ## Log Entries
 

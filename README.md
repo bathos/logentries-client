@@ -15,7 +15,7 @@ Tested in Node v0.10 + and io.js. It probably works in Node 0.8 too, but one of
 the test libraries ([mitm](https://www.npmjs.com/package/mitm)) doesn’t, so it
 remains unconfirmed.
 
-<!-- MarkdownTOC  autolink=true bracket=round -->
+<!-- MarkdownTOC autolink=true bracket=round -->
 
 - [Start](#start)
 - [Options](#options)
@@ -24,7 +24,7 @@ remains unconfirmed.
 - [Log Entries](#log-entries)
 - [Methods](#methods)
 - [Buffer & Connection Issues](#buffer--connection-issues)
-- [Using as a Winston ‘Transport’](#using-as-a-winston-‘transport’)
+- [Using as a Winston ‘Transport’](#using-as-a-winston-transport)
 - [Using with Bunyan](#using-with-bunyan)
 - [Setting Up With Logentries Itself](#setting-up-with-logentries-itself)
 - [2015-05-26: le_node & Logentries-Client](#2015-05-26-le_node--logentries-client)
